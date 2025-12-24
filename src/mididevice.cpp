@@ -227,6 +227,28 @@ void CMIDIDevice::MIDIMessageHandler (const u8 *pMessage, size_t nLength, unsign
 				Iterator->second->Send (pMessage, nLength, nCable);
 			}
 		}
+		// Handle MIDI Thru 3
+		if (m_DeviceName.compare (m_pConfig->GetMIDIThru3In ()) == 0)
+		{
+			TDeviceMap::const_iterator Iterator;
+
+			Iterator = s_DeviceMap.find (m_pConfig->GetMIDIThru3Out ());
+			if (Iterator != s_DeviceMap.end ())
+			{
+				Iterator->second->Send (pMessage, nLength, nCable);
+			}
+		}
+		// Handle MIDI Thru 4
+		if (m_DeviceName.compare (m_pConfig->GetMIDIThru4In ()) == 0)
+		{
+			TDeviceMap::const_iterator Iterator;
+
+			Iterator = s_DeviceMap.find (m_pConfig->GetMIDIThru4Out ());
+			if (Iterator != s_DeviceMap.end ())
+			{
+				Iterator->second->Send (pMessage, nLength, nCable);
+			}
+		}
 	}
 
 	if (nLength < 2)

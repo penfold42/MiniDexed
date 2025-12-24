@@ -123,6 +123,46 @@ void CConfig::Load (void)
 		}
 	}
 
+	const char *pMIDIThru3 = m_Properties.GetString ("MIDIThru3");
+	if (pMIDIThru3)
+	{
+		std::string Arg (pMIDIThru3);
+
+		size_t nPos = Arg.find (',');
+		if (nPos != std::string::npos)
+		{
+			m_MIDIThru3In = Arg.substr (0, nPos);
+			m_MIDIThru3Out = Arg.substr (nPos+1);
+
+			if (   m_MIDIThru3In.empty ()
+			    || m_MIDIThru3Out.empty ())
+			{
+				m_MIDIThru3In.clear ();
+				m_MIDIThru3Out.clear ();
+			}
+		}
+	}
+
+	const char *pMIDIThru4 = m_Properties.GetString ("MIDIThru4");
+	if (pMIDIThru4)
+	{
+		std::string Arg (pMIDIThru4);
+
+		size_t nPos = Arg.find (',');
+		if (nPos != std::string::npos)
+		{
+			m_MIDIThru4In = Arg.substr (0, nPos);
+			m_MIDIThru4Out = Arg.substr (nPos+1);
+
+			if (   m_MIDIThru4In.empty ()
+			    || m_MIDIThru4Out.empty ())
+			{
+				m_MIDIThru4In.clear ();
+				m_MIDIThru4Out.clear ();
+			}
+		}
+	}
+
 	m_bMIDIThruIgnoreClock = m_Properties.GetNumber ("MIDIThruIgnoreClock", 0) != 0;
 	m_bMIDIThruIgnoreActiveSensing = m_Properties.GetNumber ("MIDIThruIgnoreActiveSensing", 0) != 0;
 
@@ -362,6 +402,26 @@ const char *CConfig::GetMIDIThru2In (void) const
 const char *CConfig::GetMIDIThru2Out (void) const
 {
 	return m_MIDIThru2Out.c_str ();
+}
+
+const char *CConfig::GetMIDIThru3In (void) const
+{
+	return m_MIDIThru3In.c_str ();
+}
+
+const char *CConfig::GetMIDIThru3Out (void) const
+{
+	return m_MIDIThru3Out.c_str ();
+}
+
+const char *CConfig::GetMIDIThru4In (void) const
+{
+	return m_MIDIThru4In.c_str ();
+}
+
+const char *CConfig::GetMIDIThru4Out (void) const
+{
+	return m_MIDIThru4Out.c_str ();
 }
 
 bool CConfig::GetMIDIThruIgnoreClock (void) const

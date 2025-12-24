@@ -126,6 +126,10 @@ public:
 	const char *GetMIDIThruOut (void) const;	// "" if not specified
 	const char *GetMIDIThru2In (void) const;	// "" if not specified
 	const char *GetMIDIThru2Out (void) const;	// "" if not specified
+	const char *GetMIDIThru3In (void) const;	// "" if not specified
+	const char *GetMIDIThru3Out (void) const;	// "" if not specified
+	const char *GetMIDIThru4In (void) const;	// "" if not specified
+	const char *GetMIDIThru4Out (void) const;	// "" if not specified
 	bool GetMIDIThruIgnoreClock (void) const;		// false if not specified
 	bool GetMIDIThruIgnoreActiveSensing (void) const;		// false if not specified
 	bool GetMIDIRXProgramChange (void) const;	// true if not specified
@@ -284,6 +288,10 @@ private:
 	std::string m_MIDIThruOut;
 	std::string m_MIDIThru2In;
 	std::string m_MIDIThru2Out;
+	std::string m_MIDIThru3In;
+	std::string m_MIDIThru3Out;
+	std::string m_MIDIThru4In;
+	std::string m_MIDIThru4Out;
 	bool m_bMIDIThruIgnoreClock;
 	bool m_bMIDIThruIgnoreActiveSensing;
 	bool m_bMIDIRXProgramChange;
