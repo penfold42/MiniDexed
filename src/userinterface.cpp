@@ -222,7 +222,7 @@ void CUserInterface::DisplayChanged (void)
 	m_Menu.EventHandler (CUIMenu::MenuEventUpdate);
 }
 
-void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const char *pValue,
+void CUserInterface::DisplayWriteOld (const char *pMenu, const char *pParam, const char *pValue,
 				   bool bArrowDown, bool bArrowUp)
 {
 	assert (pMenu);
@@ -273,6 +273,98 @@ void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const 
 	{
 		Msg.Append ("\x1B[K");		// clear end of line
 	}
+
+	LCDWrite (Msg);
+}
+
+void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const char *pValue,
+				   bool bArrowDown, bool bArrowUp)
+{
+	assert (pMenu);
+	assert (pParam);
+	assert (pValue);
+// Render text to LCD screen
+//                           bCenterValue==true
+// +----------------+        +----------------+
+// |PARAM       MENU|        |PARAM       MENU|
+// |[<]VALUE     [>]|        |[<]  VALUE   [>]|
+// +----------------+        +----------------+
+//
+// Ideally we'd do this cleaner but:
+// - CString::format's printf implementations is limited
+// - theres no CString::truncate
+// - I tried ANSI sequences to clear to end of line and cursor move
+//   but on OLED (and maybe LCD??) they cause flickering.
+//
+// So, we're left with pre rendering each line carefully using memcpy
+
+#define MAX_LINE 32
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+	size_t lcdCols = MIN(m_pConfig->GetLCDColumns(), MAX_LINE);
+
+	char pLine[MAX_LINE+1];	// room for trailing \0
+
+	size_t nLen, nOffset;
+	bool bDoParam = true;		// when space is tight, which wlll we print
+	bool bDoMenu = true;
+	bool bCenterValue = true;	// do we center the value ?
+
+	CString Msg ("\x1B[H\E[?25l");		// cursor home and off
+
+	// first line
+	memset (pLine, ' ', lcdCols);	// prefill with spaces
+	// if I cant fit both, pick pParam if its got text
+	if ( strlen (pParam) + strlen (pMenu) > lcdCols ) {
+		if ( strlen (pParam) ) {
+			bDoMenu = false;
+		} else {
+			bDoParam = false;
+		}
+	}
+	// pMenu - right justified
+	if (bDoMenu) {
+		if (strlen(pMenu) < lcdCols) {		// top right text can be right justified
+			nOffset = lcdCols - strlen(pMenu);
+			nLen = MIN(strlen(pMenu), lcdCols);
+			memcpy (pLine+nOffset, pMenu, nLen);
+		} else {
+			nLen = MIN(strlen(pMenu), lcdCols);
+			memcpy (pLine, pMenu, nLen);
+		}
+	}
+
+	// pParam - left justified
+	if (bDoParam) {
+		nLen = MIN(strlen(pParam), lcdCols);
+		memcpy (pLine, pParam, nLen);
+	}
+
+	pLine[lcdCols] = 0;	// ensure NUL terminated
+	Msg.Append (pLine);
+
+	// second line
+	memset (pLine, ' ', lcdCols);	// prefill with spaces
+	if (bArrowDown) {
+		pLine[0] = '<';		// arrow left character
+	}
+
+	size_t lcdValueCols = lcdCols-2;
+	nLen = MIN(strlen(pValue), lcdValueCols); // make room for the left/right arrows
+
+	nOffset = 1;	// assume left justified,  start after the arrow
+	if (bCenterValue) {
+		if (strlen(pMenu) < lcdValueCols) {
+			nOffset = (lcdValueCols - strlen(pValue)) / 2 + 1;
+		}
+	}
+	memcpy (pLine+nOffset, pValue, nLen);
+
+	if (bArrowUp) {
+		pLine[lcdCols-1] = '>';		// arrow right character
+	}
+
+	pLine[lcdCols] = 0;
+	Msg.Append (pLine);
 
 	LCDWrite (Msg);
 }
