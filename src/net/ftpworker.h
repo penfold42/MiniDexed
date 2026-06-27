@@ -28,6 +28,7 @@
 #include <circle/sched/task.h>
 #include <circle/string.h>
 #include "../config.h"
+#include "../userinterface.h"
 #include "mdnspublisher.h"
 
 // TODO: These may be incomplete/inaccurate
@@ -81,7 +82,7 @@ struct TDirectoryListEntry;
 class CFTPWorker : protected CTask
 {
 public:
-	CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const char* pExpectedPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig);
+	CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const char* pExpectedPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig, CUserInterface* pUI);
 	virtual ~CFTPWorker() override;
 
 	virtual void Run() override;
@@ -119,6 +120,7 @@ private:
 	bool RenameTo(const char* pArgs);
 	bool Bye(const char* pArgs);
 	bool NoOp(const char* pArgs);
+	bool UpTime(const char* pArgs);
 
 	CString m_LogName;
 
@@ -131,6 +133,8 @@ private:
 	CSocket* m_pDataSocket;
 	u16 m_nDataSocketPort;
 	CIPAddress m_DataSocketIPAddress;
+	CIPAddress m_ForeignIPAddress;
+	CString m_ForeignIPString;
 
 	// Command/data buffers
 	char m_CommandBuffer[FRAME_BUFFER_SIZE];
@@ -146,6 +150,7 @@ private:
 
 	CmDNSPublisher* m_pmDNSPublisher;
 	CConfig* m_pConfig;
+	CUserInterface* m_pUI;
 
 	static void FatFsPathToFTPPath(const char* pInBuffer, char* pOutBuffer, size_t nSize);
 	static void FTPPathToFatFsPath(const char* pInBuffer, char* pOutBuffer, size_t nSize);

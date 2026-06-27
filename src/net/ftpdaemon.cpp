@@ -34,13 +34,14 @@ LOGMODULE("ftpd");
 constexpr u16 ListenPort = 21;
 constexpr u8 MaxConnections = 1;
 
-CFTPDaemon::CFTPDaemon(const char* pUser, const char* pPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig)
+CFTPDaemon::CFTPDaemon(const char* pUser, const char* pPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig, CUserInterface *pUI)
 	: CTask(TASK_STACK_SIZE, true),
 	  m_pListenSocket(nullptr),
 	  m_pUser(pUser),
 	  m_pPassword(pPassword),
 	  m_pmDNSPublisher(pMDNSPublisher),
-	  m_pConfig(pConfig)
+	  m_pConfig(pConfig),
+	  m_pUI (pUI)
 {
 }
 
@@ -108,6 +109,6 @@ void CFTPDaemon::Run()
 		}
 
 		// Spawn new worker
-		new CFTPWorker(pConnection, m_pUser, m_pPassword, m_pmDNSPublisher, m_pConfig);
+		new CFTPWorker(pConnection, m_pUser, m_pPassword, m_pmDNSPublisher, m_pConfig, m_pUI);
 	}
 }

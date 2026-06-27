@@ -96,6 +96,7 @@ const TFTPCommand CFTPWorker::Commands[] =
 	{ "BYE",	&CFTPWorker::Bye			},
 	{ "QUIT",	&CFTPWorker::Bye			},
 	{ "NOOP",	&CFTPWorker::NoOp			},
+	{ "UPTM",	&CFTPWorker::UpTime			},
 };
 
 u8 CFTPWorker::s_nInstanceCount = 0;
@@ -126,7 +127,7 @@ inline bool DirectoryCaseInsensitiveAscending(const TDirectoryListEntry& EntryA,
 }
 
 
-CFTPWorker::CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const char* pExpectedPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig)
+CFTPWorker::CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const char* pExpectedPassword, CmDNSPublisher* pMDNSPublisher, CConfig* pConfig, CUserInterface* pUI)
 	: CTask(TASK_STACK_SIZE),
 	  m_LogName(),
 	  m_pExpectedUser(pExpectedUser),
@@ -135,6 +136,7 @@ CFTPWorker::CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const
 	  m_pDataSocket(nullptr),
 	  m_nDataSocketPort(0),
 	  m_DataSocketIPAddress(),
+	  m_ForeignIPAddress(),
 	  m_CommandBuffer{'\0'},
 	  m_DataBuffer{0},
 	  m_User(),
@@ -144,10 +146,13 @@ CFTPWorker::CFTPWorker(CSocket* pControlSocket, const char* pExpectedUser, const
 	  m_CurrentPath(),
 	  m_RenameFrom(),
 	  m_pmDNSPublisher(pMDNSPublisher),
-	  m_pConfig(pConfig)
+	  m_pConfig(pConfig),
+	  m_pUI(pUI)
 {
 	++s_nInstanceCount;
 	m_LogName.Format("ftpd[%d]", s_nInstanceCount);
+	m_ForeignIPAddress = m_pControlSocket->GetForeignIP();
+	m_ForeignIPAddress.Format(&m_ForeignIPString);
 }
 
 CFTPWorker::~CFTPWorker()
@@ -171,6 +176,7 @@ void CFTPWorker::Run()
 	CScheduler* const pScheduler = CScheduler::Get();
 
 	LOGNOTE("Worker task %d spawned", nWorkerNumber);
+	m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Connected", false, false);
 
 	if (!SendStatus(TFTPStatus::ReadyForNewUser, MOTDBanner))
 		return;
@@ -191,6 +197,7 @@ void CFTPWorker::Run()
 			if (pTimer->GetTicks() - nTimeout >= SocketTimeout * HZ)
 			{
 				LOGERR("Socket timed out");
+				m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Timeout", false, false);
 				break;
 			}
 
@@ -201,6 +208,7 @@ void CFTPWorker::Run()
 		if (nReceiveBytes < 0)
 		{
 			LOGNOTE("Connection closed");
+			m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Closed", false, false);
 			break;
 		}
 
@@ -240,6 +248,11 @@ void CFTPWorker::Run()
 	}
 
 	LOGNOTE("Worker task %d shutting down", nWorkerNumber);
+	unsigned int start = pTimer->GetTicks();
+	while ((pTimer->GetTicks() - start) < 1 * HZ) {
+		CScheduler::Get()->Yield();
+	}
+	m_pUI->DisplayChanged();
 
 	delete m_pControlSocket;
 	m_pControlSocket = nullptr;
@@ -320,8 +333,12 @@ bool CFTPWorker::CheckLoggedIn()
 	LOGDBG("Password compare: expected '%s', actual '%s'", static_cast<const char*>(m_pExpectedPassword),  static_cast<const char*>(m_Password));
 #endif
 
-	if (m_User.Compare(m_pExpectedUser) == 0 && m_Password.Compare(m_pExpectedPassword) == 0)
-		return true;
+	if (	(m_User.GetLength() == strlen(m_pExpectedUser)) &&
+		(m_Password.GetLength() == strlen(m_pExpectedPassword)) &&
+		(m_User.Compare(m_pExpectedUser) == 0) && 
+		(m_Password.Compare(m_pExpectedPassword) == 0)	) {
+			return true;
+	}
 
 	SendStatus(TFTPStatus::NotLoggedIn, "Not logged in.");
 	return false;
@@ -582,8 +599,12 @@ bool CFTPWorker::Password(const char* pArgs)
 	m_Password = pArgs;
 
 	if (!CheckLoggedIn())
+	{
+		m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Logged Out", false, false);
 		return false;
+	}
 
+	m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Logged In", false, false);
 	SendStatus(TFTPStatus::UserLoggedIn, "User logged in.");
 	return true;
 }
@@ -1062,10 +1083,13 @@ bool CFTPWorker::Bye(const char* pArgs)
 		SendStatus(TFTPStatus::ClosingControl, "Goodbye.");
 		delete m_pControlSocket;
 		m_pControlSocket = nullptr;
+		m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "Goodbye", false, false);
 		return true;
 	}
 
 	SendStatus(TFTPStatus::ClosingControl, "Goodbye. Rebooting");
+	m_pUI->DisplayWrite ("FTP", m_ForeignIPString.c_str(), "REBOOTING", false, false);
+
 	delete m_pControlSocket;
 	m_pControlSocket = nullptr;
 
@@ -1084,6 +1108,12 @@ bool CFTPWorker::Bye(const char* pArgs)
 		CScheduler::Get()->Yield();
 	}
 
+	m_pUI->DisplayWrite ("", "", "", false, false);
+
+	start = pTimer->GetTicks();
+	while ((pTimer->GetTicks() - start) < HZ/10) {
+		CScheduler::Get()->Yield();
+	}
 	// Reboot the system if the user disconnects in order to apply any changes made
 	reboot();
 	return true;
@@ -1092,6 +1122,15 @@ bool CFTPWorker::Bye(const char* pArgs)
 bool CFTPWorker::NoOp(const char* pArgs)
 {
 	SendStatus(TFTPStatus::Success, "Command OK.");
+	return true;
+}
+
+bool CFTPWorker::UpTime(const char* pArgs)
+{
+	char Buffer[TextBufferSize];
+	CTimer* const pTimer = CTimer::Get();
+	snprintf(Buffer, sizeof(Buffer), "Up for %u seconds.", pTimer->GetUptime());
+	SendStatus(TFTPStatus::Success, Buffer);
 	return true;
 }
 

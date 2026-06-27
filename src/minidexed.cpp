@@ -2305,7 +2305,7 @@ void CMiniDexed::UpdateNetwork()
 		}
 
 		if (m_pConfig->GetNetworkFTPEnabled()) {
-			m_pFTPDaemon = new CFTPDaemon(FTPUSERNAME, FTPPASSWORD, m_pmDNSPublisher, m_pConfig);
+			m_pFTPDaemon = new CFTPDaemon(FTPUSERNAME, FTPPASSWORD, m_pmDNSPublisher, m_pConfig, &m_UI);
 
 			if (!m_pFTPDaemon->Initialize())
 			{
