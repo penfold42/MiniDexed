@@ -269,6 +269,8 @@ public:
 	bool GetNetworkFTPEnabled (void) const;
 	bool GetUDPMIDIEnabled (void) const;
 	const CIPAddress& GetUDPMIDIIPAddress (void) const;
+	bool GetUDPDisplayEnabled (void) const;
+	const CIPAddress& GetUDPDisplayIPAddress (void) const;
 
 	// PC Keyboard mapping - USB HID key to note and CC
 	const bool GetPCKeyUseDefaultNotes () const;
@@ -426,6 +428,9 @@ private:
 	bool m_bPCKeyUseDefaultNotes;
 	u8 m_nPCKeyNoteMap[256];
 	u8 m_nPCKeyCCMap[256];
+
+	bool m_bUDPDisplayEnabled;
+	CIPAddress m_IUDPDisplayIPAddress;
 };
 
 #endif

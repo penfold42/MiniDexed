@@ -31,6 +31,8 @@
 #include <circle/writebuffer.h>
 #include <circle/i2cmaster.h>
 #include <circle/spimaster.h>
+#include <circle/net/ipaddress.h>
+#include <circle/net/socket.h>
 
 class CMiniDexed;
 
@@ -41,6 +43,8 @@ public:
 	~CUserInterface (void);
 
 	bool Initialize (void);
+
+	bool InitUDP (void);
 
 	void Process (void);
 
@@ -62,6 +66,7 @@ public:
 
 private:
 	void LCDWrite (const char *pString);		// Print to optional HD44780 display
+	void UDPWrite (const char *pString);		// Print to optional HD44780 display
 
 	void EncoderEventHandler (CKY040::TEvent Event);
 	static void EncoderEventStub (CKY040::TEvent Event, void *pParam);
@@ -91,6 +96,10 @@ private:
 	bool m_bSwitchPressed;
 
 	CUIMenu m_Menu;
+
+	CSocket* m_pUDPSendSocket = nullptr;
+	CIPAddress m_UDPDestAddress;
+	unsigned m_UDPDestPort = 1306;
 };
 
 #endif
