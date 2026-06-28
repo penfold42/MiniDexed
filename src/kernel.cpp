@@ -34,7 +34,7 @@ CKernel *CKernel::s_pThis = 0;
 CKernel::CKernel (void)
 :	
 	CStdlibAppStdio ("minidexed"),
-	m_Config (&mFileSystem),
+	m_Config (&mFileSystem, &mOptions),
 	m_GPIOManager (&mInterrupt),
  	m_I2CMaster (CMachineInfo::Get ()->GetDevice (DeviceI2CMaster), TRUE),
 	m_pSPIMaster (nullptr),

@@ -26,8 +26,10 @@
 
 LOGMODULE("config");
 
-CConfig::CConfig (FATFS *pFileSystem)
-:	m_Properties ("minidexed.ini", pFileSystem)
+CConfig::CConfig (FATFS *pFileSystem, CKernelOptions *pOptions)
+:	m_Properties ("minidexed.ini", pFileSystem),
+	m_Options(pOptions),
+	m_pFileSystem(pFileSystem)
 {
 }
 
@@ -37,7 +39,20 @@ CConfig::~CConfig (void)
 
 void CConfig::Load (void)
 {
-	m_Properties.Load ();
+	if (m_Options->GetAppOptionString("inifile"))
+	{
+		LOGNOTE("minidexed.ini: using %s",
+			m_Options->GetAppOptionString("inifile"));
+		new (&m_Properties) CPropertiesFatFsFile(
+				m_Options->GetAppOptionString("inifile"),
+				m_pFileSystem);
+	}
+
+	if (!m_Properties.Load ())
+	{
+		LOGERR("Failed to load minidexed.ini config file");
+		CTimer::SimpleMsDelay(4000);
+	}
 	
 	// Number of Tone Generators and Polyphony
 	m_nToneGenerators = m_Properties.GetNumber ("ToneGenerators", DefToneGenerators);
@@ -254,7 +269,19 @@ void CConfig::Load (void)
 	m_bPerformanceSelectChannel = m_Properties.GetNumber ("PerformanceSelectChannel", 0);
 	
 	// Network
-	m_bNetworkEnabled  = m_Properties.GetNumber ("NetworkEnabled", 0) != 0;
+	if (m_Options)
+	{
+		if (strcmp(m_Options->GetAppOptionString("networkenabled"),"on") == 0)
+			m_bNetworkEnabled  = 1;
+		if (strcmp(m_Options->GetAppOptionString("networkenabled"),"off") == 0)
+			m_bNetworkEnabled  = 0;
+		else
+			m_bNetworkEnabled  = m_Properties.GetNumber ("NetworkEnabled", 0) != 0;
+	}
+	else
+	{
+		m_bNetworkEnabled  = m_Properties.GetNumber ("NetworkEnabled", 0) != 0;
+	}
 	m_bNetworkDHCP  = m_Properties.GetNumber ("NetworkDHCP", 0) != 0;
 	m_NetworkType = m_Properties.GetString ("NetworkType", "wlan");
 	m_NetworkHostname = m_Properties.GetString ("NetworkHostname", "MiniDexed");

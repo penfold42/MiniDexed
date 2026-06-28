@@ -27,7 +27,9 @@
 #include <fatfs/ff.h>
 #include <Properties/propertiesfatfsfile.h>
 #include <circle/sysconfig.h>
+#include <circle/koptions.h>
 #include <string>
+//#include <memory>
 
 #define SPI_INACTIVE	255
 #define SPI_DEF_CLOCK	15000	// kHz
@@ -94,7 +96,7 @@ public:
 	static const unsigned LCDRows = 2;
 
 public:
-	CConfig (FATFS *pFileSystem);
+	CConfig (FATFS *pFileSystem, CKernelOptions *pOptions);
 	~CConfig (void);
 
 	void Load (void);
@@ -277,6 +279,8 @@ public:
 
 private:
 	CPropertiesFatFsFile m_Properties;
+	CKernelOptions *m_Options;
+	FATFS *m_pFileSystem;
 	
 	unsigned m_nToneGenerators;
 	unsigned m_nPolyphony;
