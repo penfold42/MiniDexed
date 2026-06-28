@@ -56,8 +56,6 @@ public:
 	// |PARAM       MENU|
 	// |[<]VALUE     [>]|
 	// +----------------+
-	void DisplayWriteOld (const char *pMenu, const char *pParam, const char *pValue,
-			   bool bArrowDown, bool bArrowUp);
 	void DisplayWrite (const char *pMenu, const char *pParam, const char *pValue,
 			   bool bArrowDown, bool bArrowUp);
 

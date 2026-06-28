@@ -264,63 +264,6 @@ void CUserInterface::DisplayChanged (void)
 	m_Menu.EventHandler (CUIMenu::MenuEventUpdate);
 }
 
-void CUserInterface::DisplayWriteOld (const char *pMenu, const char *pParam, const char *pValue,
-				   bool bArrowDown, bool bArrowUp)
-{
-	assert (pMenu);
-	assert (pParam);
-	assert (pValue);
-
-	CString Msg  ("\x1B[H\E[?25l");		// cursor home and off
-
-	// first line
-	Msg.Append (pParam);
-
-	size_t nLen = strlen (pParam) + strlen (pMenu);
-	if (nLen < m_pConfig->GetLCDColumns ())
-	{
-		for (unsigned i = m_pConfig->GetLCDColumns ()-nLen; i > 0; i--)
-		{
-			Msg.Append (" ");
-		}
-	}
-
-	Msg.Append (pMenu);
-
-	// second line
-	Msg.Append ("\x1B[2;1H");		// cursor to row 2 column 1
-	CString Value (" ");
-	if (bArrowDown)
-	{
-		Value = "<";			// arrow left character
-	}
-
-	Value.Append (pValue);
-
-	if (bArrowUp)
-	{
-		if (Value.GetLength () < m_pConfig->GetLCDColumns ()-1)
-		{
-			for (unsigned i = m_pConfig->GetLCDColumns ()-Value.GetLength ()-1; i > 0; i--)
-			{
-				Value.Append (" ");
-			}
-		}
-
-		Value.Append (">");		// arrow right character
-	}
-
-	Msg.Append (Value);
-
-	if (Value.GetLength () < m_pConfig->GetLCDColumns ())
-	{
-		Msg.Append ("\x1B[K");		// clear end of line
-	}
-
-	LCDWrite (Msg);
-	UDPWrite (Msg);
-}
-
 void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const char *pValue,
 				   bool bArrowDown, bool bArrowUp)
 {
@@ -354,6 +297,7 @@ void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const 
 	bool bCenterValue = true;	// do we center the value ?
 
 	CString Msg ("\x1B[H\E[?25l");		// cursor home and off
+	CString UDPMsg ("\x1B[H\E[?25l");		// cursor home and off
 
 	// first line
 	memset (pLine, ' ', lcdCols);	// prefill with spaces
@@ -386,6 +330,9 @@ void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const 
 	pLine[lcdCols] = 0;	// ensure NUL terminated
 	Msg.Append (pLine);
 
+	UDPMsg.Append (pLine);
+	UDPMsg.Append ("\x1B[2;1H");		// cursor to row 2 column 1
+
 	// second line
 	memset (pLine, ' ', lcdCols);	// prefill with spaces
 	if (bArrowDown) {
@@ -409,8 +356,10 @@ void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const 
 
 	pLine[lcdCols] = 0;
 	Msg.Append (pLine);
+	UDPMsg.Append (pLine);
 
 	LCDWrite (Msg);
+	UDPWrite (UDPMsg);
 }
 
 void CUserInterface::LCDWrite (const char *pString)
