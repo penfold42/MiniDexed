@@ -264,6 +264,20 @@ void CUserInterface::DisplayChanged (void)
 	m_Menu.EventHandler (CUIMenu::MenuEventUpdate);
 }
 
+void CUserInterface::DisplayBlank (void)
+{
+//	DisplayWrite("", "", "", 1, 1);
+	CString Msg ("\x1B[H\E[?25l\E[J");		// cursor home and off and clear screen
+	LCDWrite (Msg);
+}
+
+void CUserInterface::TimerHandler (TKernelTimerHandle hTimer, void *pParam, void *pContext)
+{
+	CUserInterface *pThis = static_cast<CUserInterface *> (pContext);
+	assert (pThis);
+	pThis->DisplayBlank ();
+}
+
 void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const char *pValue,
 				   bool bArrowDown, bool bArrowUp)
 {
@@ -360,6 +374,17 @@ void CUserInterface::DisplayWrite (const char *pMenu, const char *pParam, const 
 
 	LCDWrite (Msg);
 	UDPWrite (UDPMsg);
+
+
+	if (unsigned t = m_pConfig->GetLCDTimeout()) {
+		t *= 1000;	// secs to mS
+		if (m_pTimerHandle) {
+			CTimer::Get()->CancelKernelTimer (m_pTimerHandle);
+		}
+		m_pTimerHandle = CTimer::Get ()->StartKernelTimer (MSEC2HZ (t), TimerHandler, 0, this);
+	}
+
+
 }
 
 void CUserInterface::LCDWrite (const char *pString)

@@ -177,6 +177,7 @@ public:
 
 	unsigned GetLCDColumns (void) const;
 	unsigned GetLCDRows (void) const;
+	unsigned GetLCDTimeout (void) const;
 
 	// GPIO Button Navigation
 	// GPIO pin numbers are chip numbers, not header positions
@@ -348,6 +349,7 @@ private:
 
 	unsigned m_nLCDColumns;
 	unsigned m_nLCDRows;
+	unsigned m_nLCDTimeout;
 	
 	unsigned m_nButtonPinPrev;
 	unsigned m_nButtonPinNext;

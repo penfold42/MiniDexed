@@ -187,6 +187,7 @@ void CConfig::Load (void)
 
 	m_nLCDColumns = m_Properties.GetNumber ("LCDColumns", 16);
 	m_nLCDRows = m_Properties.GetNumber ("LCDRows", 2);
+	m_nLCDTimeout = m_Properties.GetNumber ("LCDTimeout", 0);
 
 	m_nButtonPinPrev = m_Properties.GetNumber ("ButtonPinPrev", 0);
 	m_nButtonPinNext = m_Properties.GetNumber ("ButtonPinNext", 0);
@@ -634,6 +635,11 @@ unsigned CConfig::GetLCDColumns (void) const
 unsigned CConfig::GetLCDRows (void) const
 {
 	return m_nLCDRows;
+}
+
+unsigned CConfig::GetLCDTimeout (void) const
+{
+	return m_nLCDTimeout;
 }
 
 unsigned CConfig::GetButtonPinPrev (void) const

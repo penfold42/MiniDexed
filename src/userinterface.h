@@ -50,6 +50,7 @@ public:
 
 	void ParameterChanged (void);
 	void DisplayChanged (void);
+	void DisplayBlank (void);
 
 	// Write to display in this format:
 	// +----------------+
@@ -71,6 +72,9 @@ private:
 	void UIButtonsEventHandler (CUIButton::BtnEvent Event);
 	static void UIButtonsEventStub (CUIButton::BtnEvent Event, void *pParam);
 	void UISetMIDIButtonChannel (unsigned uCh);
+	static void TimerHandler (TKernelTimerHandle hTimer, void *pParam, void *pContext);
+	TKernelTimerHandle m_pTimerHandle;
+
 
 private:
 	CMiniDexed *m_pMiniDexed;
